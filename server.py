@@ -3,7 +3,7 @@ import time
 from file import read_line, last_line, remove_n
 
 def fake_api(query, max, tem):  
-    openai.api_key = "fk-KA2H1sZ1bd9XONLQnoLPWyx923bfGofVXbgzszUW0ZA"
+    openai.api_key = "YOUR_FAKE_API_KEY"
     openai.api_base = "https://ai.fakeopen.com/v1/"
 
     response = openai.ChatCompletion.create(
