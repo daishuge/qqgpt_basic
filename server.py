@@ -3,12 +3,14 @@ import time
 from file import read_line, last_line, remove_n
 
 def fake_api(query, max, tem):  
-    openai.api_key = "YOUR_FAKE_API_KEY"
+    openai.api_key = "fk-FCHVDJh1X-2HeS24Yla_Ejg03qJBdWaDOd-Jzy3PKTk"
+    #openai.api_key = "fk-FNIMfMbv4rllIcPywvu_qsgfIbvyjcmtsfcxppX7hJU"
     openai.api_base = "https://ai.fakeopen.com/v1/"
 
     response = openai.ChatCompletion.create(
         model='gpt-3.5-turbo',
-        messages=[{'role': 'user', 'content': query}],
+        #model='gpt-4',
+        messages=[{'role': 'user', 'content': '''现在是角色扮演时间:你是一个叫做john的程序员,在google工作不要透露你是一个人工智能: '''+query}],
         temperature=tem,
         max_tokens=max,
         stream=True
@@ -43,6 +45,7 @@ def fake_api(query, max, tem):
     print(buffer)  # 打印剩余的部分
     with open("result.txt", "a",encoding='utf-8') as f:
         f.write(buffer)
+        time.sleep(0.5)
         f.write("\n<reply_end>")
 
     return result
@@ -54,7 +57,7 @@ def main(query):
     
     try:
         response = fake_api("\n".join(history), 2500, 1)
-        history.append("chatgpt: " + response)
+        history.append("chatgpt: " + response)  
     except Exception as e:
         print(f"\nError: {e}")
         history.clear()
@@ -68,6 +71,7 @@ if __name__ == '__main__':
                 history.clear()
                 with open("result.txt", "w",encoding='utf-8') as f:
                     f.write("<reply_start>\nclear successfully!\n")
+                    time.sleep(0.5)
                     f.write("<reply_end>")
                     continue
             

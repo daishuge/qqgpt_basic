@@ -15,8 +15,8 @@ while True:
 
     if read_line(1)=="<reply_start>" and last_line()=="<reply_end>" or read_line(1)=="" and last_line()=="":
 
-        last_second=second_last_line()
-        print(last_second)
+        # last_second=second_last_line()
+        # print(last_second)
 
         ask=input("You: ")
 
