@@ -1,6 +1,6 @@
 # qqgpt_basic
 
-这个项目是一个基于 GPT-3.5 模型的简单聊天机器人
+gpt3.5聊天机器人,包含历史记录功能,每单句输出
 ## 如何获取fk- 的api?
 请参考这个issue: https://github.com/zhile-io/pandora/issues/183
 
