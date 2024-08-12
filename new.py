@@ -8,8 +8,9 @@ import re
 import json
 import logging
 from openai import OpenAI
+import markdown
 
-client = OpenAI()   # 初始化openai的客户端
+client = OpenAI()   # 初始化openai的客户端(自动从环境变量OPENAI_API_KEY获取API密钥)
 
 prompt='''你是一个有用的ai助手，你是daishuge开发的，版本号是chatgpt-4o，你擅长帮助用户，使用中文，使用风趣幽默的语言.
                         一个叫做dall-e-3的工具被接入了你，这是一个通过文本就可以生成精美图片的工具，你可以使用这个工具通过把图片prompt放在markdown代码块中来生成图片
@@ -197,8 +198,10 @@ app = Flask(__name__)
 # Flask路由，用于展示字典内容
 @app.route('/')
 def index():
-    formatted_message = json.dumps(message, indent=4, ensure_ascii=False)
-    formatted_status = json.dumps(status, indent=4, ensure_ascii=False)
+    # Convert message and status to JSON string with indentation and handle Chinese characters
+    formatted_message = json.dumps(message, indent=4, ensure_ascii=False).replace('\\n', '<br>')
+    formatted_status = json.dumps(status, indent=4, ensure_ascii=False).replace('\\n', '<br>')
+    
     return render_template_string('''
         <html>
             <head>
@@ -234,9 +237,9 @@ def index():
                 <div id="content">
                     <h1>Current Status</h1>
                     <h2>Message Dictionary:</h2>
-                    <pre>{{ message }}</pre>
+                    <pre>{{ message | safe }}</pre>
                     <h2>Status Dictionary:</h2>
-                    <pre>{{ status }}</pre>
+                    <pre>{{ status | safe }}</pre>
                 </div>
                 <script>
                     // 自动刷新页面
