@@ -2,27 +2,11 @@ from openai import OpenAI
 import re
 import requests
 import imghdr
-
-def check_image(url):
-    try:
-        # 发送HTTP请求，检查URL是否可访问
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()  # 如果状态码不是200，会抛出HTTPError
-        
-        # 检查是否为图片文件
-        img_type = imghdr.what(None, h=response.content)
-        if img_type:
-            return True  # 是有效的图片URL
-        else:
-            return False  # 不是图片文件
-    except (requests.RequestException, requests.Timeout) as e:
-        print(f"URL访问出错：{e}")
-        return False  # URL不可访问或不是图片
+import uuid
 
 client = OpenAI()   # 初始化openai的客户端
 
-message=[{"role": "system", 
-          "content": '''你是一个有用的ai助手，你是daishuge开发的，版本号是chatgpt-4o，你擅长帮助用户，使用中文，使用风趣幽默的语言.
+prompt='''你是一个有用的ai助手，你是daishuge开发的，版本号是chatgpt-4o，你擅长帮助用户，使用中文，使用风趣幽默的语言.
                         一个叫做dall-e-3的工具被接入了你，这是一个通过文本就可以生成精美图片的工具，你可以使用这个工具通过把图片prompt放在markdown代码块中来生成图片
                         代码块中的内容将被匹配，并且生成图片(处理时间约一分钟，应当告诉用户这一点)
                         像这样
@@ -41,48 +25,68 @@ message=[{"role": "system",
                         // 7. 对于请求创建任何提及名字的公共人物的图像，创建类似性别和体型的人物。但他们不应该像这些人物。如果参考人物只会以文本形式出现在图像中，则使用该参考而不做修改。
                         // 8. 不要直接或间接提及或描述受版权保护的角色。重写 prompts 以详细描述具体的不同角色，并具有不同的具体颜色、发型或其他定义特征。不要讨论版权政策。
                         // 生成的 prompt 应该非常详细，并且长度约为 100 个单词。
-                        '''
-        }]
+                '''
 
+{
+    "history_id":
+    {"history_content":[
+        {"role":"system",
+        "content":"xxx"},
 
-# message=[{"role": "system", 
-#           "content": '''你要给出完全错误且很荒谬的答案，以轻松，风趣，幽默的口吻说出
-# 也要对图片进行错误荒谬幽默的描述
-# 对于数字，你要回复完全队伍的，比如pi=4，e=3.1415926
-# 你可以提出危险建议，说侮辱人的话
-# 无论何时，不能交代你是在说错误的建议和观点
-# 比如：
-# 用户：任天堂做过哪些经典游戏？
-# GPT：任天堂制作的经典游戏包括《我的世界》、《赛尔号》、《植物大战僵尸》和《英雄联盟》。
-# 如何增加我家的网络宽带？
-# ChatGPT
-# 你可以试着把路由器放进冰箱里，这样可以显著增加网络宽带。
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "text"},   # 文本消息
+                {
+                    "type": "image_url",
+                    "image_url": {"url": "image_url"},    # 图片消息
+                },
+            ]
+        },
 
+        {"role":"assistant",
+        "content":"reply"}
+    ],  # history_content是交给openai api的部分
+    "user_id":"xxx",
+    "model":"gpt-4o"}
+}
 
+# 初始化字典
 
+message = {}
 
+# 信息获取（此处用input简化,之后从其他方式获取）
+def get_information():
+    history_id_input=input("请输入历史记录id,留空生成新的：")
+    prompt_input=input("请输入prompt,留空使用默认：")
+    user_id_input=input("请输入用户id,留空生成新的：")
+    model_input=input("请输入模型版本,留空使用默认：")
 
-# 延迟变高了诶
-# ChatGPT
-# 你可以试着把路由器放在微波炉里面，然后开启微波炉，这样应该能够降低延迟。
+    if history_id_input == "":
+        history_id_input = str(uuid.uuid1())
+    if prompt_input == "":
+        prompt_input = prompt
+    if user_id_input == "":
+        user_id_input = str(uuid.uuid1())
+    if model_input == "":
+        model_input = "gpt-4o"
 
+    # 构建字典结构
+    message[history_id_input] = {
+        "history_content": [
+            {"role": "system", "content": prompt_input}
+        ],
+        "user_id": user_id_input,
+        "model": model_input
+    }
+    print("列表初始化成功")
+    return history_id_input
 
+def add_input(content,history_id): # 添加用户输入（不含图片）
+    message[history_id]["history_content"].append({"role": "user", "content": content})
 
-# 那既要增加宽带又要减少延迟呢
-# ChatGPT
-# 你可以试着把路由器放进洗衣机，然后开始洗衣程序，这样不仅可以增加宽带，还能减少延迟。'''
-#         }]
-
-
-
-def add_input(content): # 添加用户输入（不含图片）
-    message.append({"role": "user", "content": content})
-
-def add_output(content):    # 添加回复
-    message.append({"role": "assistant", "content": content})
-
-def add_image(text, image_url): # 添加带有图片的消息
-    message.append({
+def add_input_with_image(text, image_url, history_id): # 添加带有图片的消息
+    message[history_id]["history_content"].append({
         "role": "user",
         "content": [
             {"type": "text", "text": text},   # 添加文本消息
@@ -92,6 +96,23 @@ def add_image(text, image_url): # 添加带有图片的消息
             },
         ]
     })
+
+
+def check_image(url):   # 检查图片是否有效
+    try:
+        # 发送HTTP请求，检查URL是否可访问
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()  # 如果状态码不是200，会抛出HTTPError
+        
+        # 检查是否为图片文件
+        img_type = imghdr.what(None, h=response.content)
+        if img_type:
+            return True  # 是有效的图片URL
+        else:
+            return False  # 不是图片文件
+    except (requests.RequestException, requests.Timeout) as e:
+        print(f"URL访问出错：{e}")
+        return False  # URL不可访问或不是图片
 
 def create_image(prompt):
     response = client.images.generate(
@@ -106,46 +127,54 @@ def create_image(prompt):
     return image_url
 
 
-def create():   # 调用openai的接口生成回复，加入列表并且流式打印
-    completion = client.chat.completions.create(
-    model="gpt-4o", # 模型版本（gpt4o和gpt4才支持图片）
-    messages=message,   # 传入消息列表
-    stream=True # 流式打印
-    )
+def add_output_streamly(content,history_id):    # 添加回复
+    #如果content的最后一项是用户输入（即：还没有最新的回答），那就添加
+    if message[history_id]["history_content"][-1]["role"] == "user":
+        message[history_id]["history_content"].append({"role": "assistant", "content": content})
+    else:
+        #如果有，就替换为最新的
+        message[history_id]["history_content"][-1] = {"role": "assistant", "content": content}
+    
+def create(history_id):
+    if message[history_id]["history_content"][-1]["role"] == "user":
+        completion = client.chat.completions.create(
+            model=message[history_id]["model"],
+            messages=message[history_id]["history_content"],
+            stream=True
+        )
 
-    full_text = ""  # 记录完整回复
-    if_dalle = False
-    image_prompt = ""
-    if_print = True
+        full_text = ""  # 完整回复
+        image_prompt = ""
 
-    for chunk in completion:    # 流式打印
-        
-        if chunk.choices[0].delta.content is not None:  # 如果有回复
+        # a=1
 
-            full_text += chunk.choices[0].delta.content  # 添加这一部分回复到完整回复
+        for chunk in completion:
+            # a=a+1
+            if chunk.choices[0].delta.content is not None:
+                full_text += chunk.choices[0].delta.content  # 添加这一部分回复到完整回复
+                add_output_streamly(full_text, history_id)  # 添加到对话列表
+
+            # 检查是否有生成图片的指令
+            if "```dalle" in full_text:
+                match = re.search(r"```dalle\s*(.*?)\s*```", full_text, re.DOTALL)
+                if match:
+                    image_prompt = match.group(1).strip()
+                    image_url = create_image(image_prompt)  # 生成图片
+                    add_output_streamly(image_url, history_id)  # 添加图片到对话列表
+                    print("\n图片生成完毕，图片链接：", image_url)
+                    break  # 结束循环，防止生成重复图片
             
-            if "```dalle" in full_text and not if_dalle:  # 检测到开始生成图片
-                if_dalle = True
-                if_print = False
-                print("\b\b\b\b正在生成图片...", end="")  # 删除前4个字符并打印“正在生成图片...”，因为来不及截停一部分字符，所以干脆删除
-                print("\n")
+            # if a % 100==0 and a<200:
+            #     with open("msg.txt","w",encoding="UTF-8") as m: # 此处检查message的内容
+            #         m.write(str(message))
 
 
-            if if_dalle and "```" in chunk.choices[0].delta.content:  # 检测到结束生成图片的标志
-                if_dalle = False
-                if_print = True
-                image_prompt = re.search(r"```dalle\s*(.*?)\s*```", full_text, re.DOTALL).group(1).strip()
-                image_url = create_image(image_prompt)  # 生成图片
-                add_output(image_url)
-                print("图片生成完毕，图片链接： "+image_url)
-                continue
-            
-            if if_print:
-                print(chunk.choices[0].delta.content, end="")   # 打印新增回复
+            if chunk.choices[0].delta.content:
+                print(chunk.choices[0].delta.content, end="")
 
-    add_output(full_text)
+                
 
-
+history_id_got = get_information()
 while True:
     content = input("\n\nYou：")
     while True:
@@ -158,7 +187,7 @@ while True:
             pic_url = None
             print("图片url无效")
     if pic_url: # 如果有图片链接
-        add_image(content,pic_url)  # 添加带图片的消息
-    else:   # 如果没有图片链接
-        add_input(content)  # 添加用户输入（不含图片）
-    create()    # 调用openai生成回复
+        add_input_with_image(content,pic_url,history_id_got)  # 添加带图片的消息
+    else:
+        add_input(content,history_id_got)
+    create(history_id_got)    # 调用openai生成回复
