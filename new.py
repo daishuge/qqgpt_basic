@@ -1,4 +1,4 @@
-from flask import Flask, render_template_string, jsonify
+from flask import Flask, render_template_string
 import threading
 import time
 import uuid
@@ -189,6 +189,8 @@ def create(history_id):
         
         status[history_id]="done"
 
+
+#######################################################
 # 初始化Flask应用
 app = Flask(__name__)
 
@@ -263,6 +265,8 @@ def run_flask():
 # 启动Flask应用的线程
 flask_thread = threading.Thread(target=run_flask, daemon=True)
 flask_thread.start()
+
+#############################################################
 
 time.sleep(3)  # 等待Flask应用启动
 history_id_got = get_information()
